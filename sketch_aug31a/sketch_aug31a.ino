@@ -1,38 +1,52 @@
 #include <Wire.h>
-#include <Adafruit_PWMServoDriver.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-
-#define SERVO_FREQ 50  // 50 Hz for standard servos
-#define SERVOMIN  150  // Min pulse length out of 4096
-#define SERVOMAX  600  // Max pulse length out of 4096
-
-// Convert degrees to PCA9685 pulse length
-int angleToPulse(int ang) {
-  return map(ang, 0, 180, SERVOMIN, SERVOMAX);
-}
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 void setup() {
-  Serial.begin(115200);
-  pwm.begin();
-  pwm.setPWMFreq(SERVO_FREQ);
-
-  delay(10);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    for (;;); // Don't continue if display not found
+  }
+  display.clearDisplay();
 }
 
 void loop() {
-  // Sweep from 0° → 180° on channel 0
-  // Sweep from 180° → 0° on channel 1 (opposite direction)
-  for (int angle = 0; angle <= 180; angle++) {
-    pwm.setPWM(0, 0, angleToPulse(angle));       // channel 0 goes forward
-    pwm.setPWM(1, 0, angleToPulse(180 - angle)); // channel 1 goes reverse
-    delay(40); // adjust speed (higher = slower)
-  }
+  drawSmiley();
+  delay(2000);
 
-  // Sweep back: 180° → 0° on channel 0, 0° → 180° on channel 1
-  for (int angle = 180; angle >= 0; angle--) {
-    pwm.setPWM(0, 0, angleToPulse(angle));       
-    pwm.setPWM(1, 0, angleToPulse(180 - angle)); 
-    delay(40); 
-  }
+  drawSad();
+  delay(2000);
+}
+
+void drawSmiley() {
+  display.clearDisplay();
+
+  // Eyes
+  display.fillRect(40, 20, 5, 5, SSD1306_WHITE); 
+  display.fillRect(80, 20, 5, 5, SSD1306_WHITE);
+
+  // Mouth (smile)
+  display.drawLine(50, 45, 70, 45, SSD1306_WHITE);
+  display.drawLine(70, 45, 75, 40, SSD1306_WHITE);
+  display.drawLine(50, 45, 45, 40, SSD1306_WHITE);
+
+  display.display();
+}
+
+void drawSad() {
+  display.clearDisplay();
+
+  // Eyes
+  display.fillRect(40, 20, 5, 5, SSD1306_WHITE); 
+  display.fillRect(80, 20, 5, 5, SSD1306_WHITE);
+
+  // Mouth (sad)
+  display.drawLine(50, 40, 70, 40, SSD1306_WHITE);
+  display.drawLine(70, 40, 75, 45, SSD1306_WHITE);
+  display.drawLine(50, 40, 45, 45, SSD1306_WHITE);
+
+  display.display();
 }
