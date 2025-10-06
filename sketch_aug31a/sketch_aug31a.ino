@@ -1,52 +1,42 @@
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_PWMServoDriver.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+
+// Servo settings
+#define STEP_DELAY 100  // milliseconds per step (slower = super slow)
+#define STEP_SIZE 1     // small increment for smooth movement
+#define OSC_RANGE 2     // tiny angle for subtle movement
+
+// Starting positions
+int pos0 = 375;
+int pos1 = 375;
 
 void setup() {
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    for (;;); // Don't continue if display not found
-  }
-  display.clearDisplay();
+  Serial.begin(115200);
+  pwm.begin();
+  pwm.setPWMFreq(50);  // standard servo frequency
+  Wire.setClock(400000);
+
+  // Initialize servos at starting positions
+  pwm.setPWM(0, 0, pos0);
+  pwm.setPWM(1, 0, pos1);
+  delay(500);
+  Serial.println("Synchronized tiny servo oscillation starting...");
 }
 
 void loop() {
-  drawSmiley();
-  delay(2000);
+  // Slowly move forward
+  for (int offset = -OSC_RANGE; offset <= OSC_RANGE; offset += STEP_SIZE) {
+    pwm.setPWM(0, 0, pos0 + offset); // Servo 0
+    pwm.setPWM(1, 0, pos1 + offset); // Servo 1, same direction
+    delay(STEP_DELAY);
+  }
 
-  drawSad();
-  delay(2000);
-}
-
-void drawSmiley() {
-  display.clearDisplay();
-
-  // Eyes
-  display.fillRect(40, 20, 5, 5, SSD1306_WHITE); 
-  display.fillRect(80, 20, 5, 5, SSD1306_WHITE);
-
-  // Mouth (smile)
-  display.drawLine(50, 45, 70, 45, SSD1306_WHITE);
-  display.drawLine(70, 45, 75, 40, SSD1306_WHITE);
-  display.drawLine(50, 45, 45, 40, SSD1306_WHITE);
-
-  display.display();
-}
-
-void drawSad() {
-  display.clearDisplay();
-
-  // Eyes
-  display.fillRect(40, 20, 5, 5, SSD1306_WHITE); 
-  display.fillRect(80, 20, 5, 5, SSD1306_WHITE);
-
-  // Mouth (sad)
-  display.drawLine(50, 40, 70, 40, SSD1306_WHITE);
-  display.drawLine(70, 40, 75, 45, SSD1306_WHITE);
-  display.drawLine(50, 40, 45, 45, SSD1306_WHITE);
-
-  display.display();
+  // Slowly move backward
+  for (int offset = OSC_RANGE; offset >= -OSC_RANGE; offset -= STEP_SIZE) {
+    pwm.setPWM(0, 0, pos0 + offset); // Servo 0
+    pwm.setPWM(1, 0, pos1 + offset); // Servo 1, same direction
+    delay(STEP_DELAY);
+  }
 }
